@@ -1,0 +1,26 @@
+{
+    "author": "cheeseisdisgusting@gmail.com",
+    "dependencies": {},
+    "keywords": [],
+    "name": "metro-watchface",
+    "pebble": {
+        "displayName": "Metro Watchface",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk"
+        ],
+        "uuid": "2351ba77-011a-4715-b32c-b6f080fd41fc",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
