@@ -13,7 +13,7 @@
         "resources": {
             "media": [
                 {
-                    "file": "fonts/Carnoky Type - LECO1976-Regular.ttf",
+                    "file": "fonts/LECO1976.ttf",
                     "name": "FONT_LECO_20",
                     "targetPlatforms": null,
                     "type": "font"
