@@ -8,7 +8,7 @@
 
 static Window *s_main_window;
 static Layer *s_window_layer, *s_foreground_layer, *s_background_layer, *s_train_layer;
-static int s_minutes, s_shape[5], s_station = 1, s_number_of_passengers, s_number_of_passengers_on_train = 0;
+static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0, s_number_of_passengers;
 static char s_time_text[6] = "00:00", s_battery_text[5] = "100%";
 // s_heart_rate_text[8] = "200 BPM";
 static PropertyAnimation *animation_in, *animation_out;
@@ -32,11 +32,11 @@ static void train_animation_out() {
 	GRect to_frame = GRect(bounds.size.w + 60, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
 	animation_out = property_animation_create_layer_frame(s_train_layer, &from_frame, &to_frame);
 	animation_set_duration((Animation*)animation_out, TRAIN_DURATION);
-	if (s_number_of_passengers == 0) {
+	if (s_number_of_passengers_waiting == 0) {
 		animation_set_delay((Animation*)animation_out, 0);
 		animation_set_curve((Animation*)animation_out, AnimationCurveLinear);
 	} else {
-		animation_set_delay((Animation*)animation_out, s_number_of_passengers * TRAIN_DELAY);
+		animation_set_delay((Animation*)animation_out, s_number_of_passengers_waiting * TRAIN_DELAY);
 		animation_set_curve((Animation*)animation_out, AnimationCurveEaseIn);
 	}
 	animation_set_handlers((Animation*)animation_out, (AnimationHandlers) {
@@ -55,7 +55,7 @@ static void train_animation_in() {
 		animation_in = property_animation_create_layer_frame(s_train_layer, &from_frame, &to_frame);
 		animation_set_duration((Animation*)animation_in, TRAIN_DURATION);
 		animation_set_delay((Animation*)animation_in, TRAIN_DELAY);
-		if (s_minutes == 0) {
+		if (s_number_of_passengers_waiting == 0) {
 			animation_set_curve((Animation*)animation_in, AnimationCurveLinear);
 		} else {
 			animation_set_curve((Animation*)animation_in, AnimationCurveEaseOut);
@@ -79,60 +79,109 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 	if (s_pick_up_passengers) {
 		graphics_context_set_fill_color(ctx, GColorPastelYellow);
 		switch(s_number_of_passengers_on_train) {
-			case 5: ;
-				const GPathInfo TRIANGLE_PATH_INFO_5 = {
-					.num_points = 3,
-					.points = (GPoint []) {{bounds.size.w * 2 / 3, 0}, {bounds.size.w, bounds.size.h / 4}, {bounds.size.w * 2 / 3, bounds.size.h / 2}}
-				};
-				GPath *s_triangle_path_5 = gpath_create(&TRIANGLE_PATH_INFO_5);
-				gpath_draw_filled(ctx, s_triangle_path_5);
-				gpath_destroy(s_triangle_path_5);
-			case 4: ;
-				const GPathInfo TRIANGLE_PATH_INFO_4 = {
-					.num_points = 3,
-					.points = (GPoint []) {{bounds.size.w / 3, bounds.size.h / 2}, {bounds.size.w * 2 / 3, bounds.size.h * 0.75}, {bounds.size.w / 3, bounds.size.h}}
-				};
-				GPath *s_triangle_path_4 = gpath_create(&TRIANGLE_PATH_INFO_4);
-				gpath_draw_filled(ctx, s_triangle_path_4);
-				gpath_destroy(s_triangle_path_4);
-			case 3: ;
-				const GPathInfo TRIANGLE_PATH_INFO_3 = {
+			case 5:
+				switch(s_shape[s_number_of_passengers - 4]) {
+					case 0:
+						graphics_fill_circle(ctx, GPoint(bounds.size.w * 5 / 6, bounds.size.h / 4), bounds.size.h / 4);
+						break;
+					case 1:
+						graphics_fill_rect(ctx, GRect(bounds.size.w * 2 / 3 + bounds.size.w / 20, + bounds.size.w / 20, bounds.size.w / 3 - bounds.size.w / 10, bounds.size.h / 2 - bounds.size.w / 10), 0, GCornerNone);
+						break;
+					case 2: ;
+						const GPathInfo TRIANGLE_PATH_INFO_5 = {
+							.num_points = 3,
+							.points = (GPoint []) {{bounds.size.w * 2 / 3, 0}, {bounds.size.w, bounds.size.h / 4}, {bounds.size.w * 2 / 3, bounds.size.h / 2}}
+						};
+						GPath *s_triangle_path_5 = gpath_create(&TRIANGLE_PATH_INFO_5);
+						gpath_draw_filled(ctx, s_triangle_path_5);
+						gpath_destroy(s_triangle_path_5);
+						break;
+				}
+			case 4:
+				switch(s_shape[s_number_of_passengers - 3]) {
+					case 0:
+						graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 3 / 4), bounds.size.h / 4);
+						break;
+					case 1:
+						graphics_fill_rect(ctx, GRect(bounds.size.w / 3 + bounds.size.w / 20, bounds.size.h / 2 + bounds.size.w / 20, bounds.size.w / 3 - bounds.size.w / 10, bounds.size.h / 2 - bounds.size.w / 10), 0, GCornerNone);
+						break;
+					case 2: ;
+						const GPathInfo TRIANGLE_PATH_INFO_4 = {
+							.num_points = 3,
+							.points = (GPoint []) {{bounds.size.w / 3, bounds.size.h / 2}, {bounds.size.w * 2 / 3, bounds.size.h * 0.75}, {bounds.size.w / 3, bounds.size.h}}
+						};
+						GPath *s_triangle_path_4 = gpath_create(&TRIANGLE_PATH_INFO_4);
+						gpath_draw_filled(ctx, s_triangle_path_4);
+						gpath_destroy(s_triangle_path_4);
+						break;
+				}
+			case 3:
+				switch(s_shape[s_number_of_passengers - 2]) {
+					case 0:
+						graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 4), bounds.size.h / 4);
+						break;
+					case 1:
+						graphics_fill_rect(ctx, GRect(bounds.size.w / 3 + bounds.size.w / 20, bounds.size.w / 20, bounds.size.w / 3 - bounds.size.w / 10, bounds.size.h / 2 - bounds.size.w / 10), 0, GCornerNone);
+						break;
+					case 2: ;
+						const GPathInfo TRIANGLE_PATH_INFO_3 = {
 							.num_points = 3,
 							.points = (GPoint []) {{bounds.size.w / 3, 0}, {bounds.size.w * 2 / 3, bounds.size.h / 4}, {bounds.size.w / 3, bounds.size.h / 2}}
 						};
-				GPath *s_triangle_path_3 = gpath_create(&TRIANGLE_PATH_INFO_3);
-				gpath_draw_filled(ctx, s_triangle_path_3);
-				gpath_destroy(s_triangle_path_3);
-			case 2: ;
-				const GPathInfo TRIANGLE_PATH_INFO_2 = {
+						GPath *s_triangle_path_3 = gpath_create(&TRIANGLE_PATH_INFO_3);
+						gpath_draw_filled(ctx, s_triangle_path_3);
+						gpath_destroy(s_triangle_path_3);
+						break;
+				}
+			case 2:
+				switch(s_shape[s_number_of_passengers - 1]) {
+					case 0:
+						graphics_fill_circle(ctx, GPoint(bounds.size.w / 6, bounds.size.h * 3 / 4), bounds.size.h / 4);
+						break;
+					case 1:
+						graphics_fill_rect(ctx, GRect(bounds.size.w / 20, bounds.size.h / 2 + bounds.size.w / 20, bounds.size.w / 3 - bounds.size.w / 10, bounds.size.h / 2 - bounds.size.w / 10), 0, GCornerNone);
+						break;
+					case 2: ;
+						const GPathInfo TRIANGLE_PATH_INFO_2 = {
 							.num_points = 3,
 							.points = (GPoint []) {{0, bounds.size.h / 2}, {bounds.size.w / 3, bounds.size.h * 0.75}, {0, bounds.size.h}}
 						};
-				GPath *s_triangle_path_2 = gpath_create(&TRIANGLE_PATH_INFO_2);
-				gpath_draw_filled(ctx, s_triangle_path_2);
-				gpath_destroy(s_triangle_path_2);
-			case 1: ;
-				const GPathInfo TRIANGLE_PATH_INFO_1 = {
-							.num_points = 3,
-							.points = (GPoint []) {{0, 0}, {bounds.size.w / 3, bounds.size.h / 4}, {0, bounds.size.h / 2}}
-						};
-						GPath *s_triangle_path_1 = gpath_create(&TRIANGLE_PATH_INFO_1);
-						gpath_draw_filled(ctx, s_triangle_path_1);
-						gpath_destroy(s_triangle_path_1);
-			break;
-			default: ;
+						GPath *s_triangle_path_2 = gpath_create(&TRIANGLE_PATH_INFO_2);
+						gpath_draw_filled(ctx, s_triangle_path_2);
+						gpath_destroy(s_triangle_path_2);
+						break;
+				}
+			case 1:
+					switch(s_shape[s_number_of_passengers]) {
+						case 0:
+							graphics_fill_circle(ctx, GPoint(bounds.size.w / 6, bounds.size.h / 4), bounds.size.h / 4);
+							break;
+						case 1:
+							graphics_fill_rect(ctx, GRect(bounds.size.w / 20, bounds.size.w / 20, bounds.size.w / 3 - bounds.size.w / 10, bounds.size.h / 2 - bounds.size.w / 10), 0, GCornerNone);
+							break;
+						case 2: ;
+							const GPathInfo TRIANGLE_PATH_INFO_1 = {
+										.num_points = 3,
+										.points = (GPoint []) {{0, 0}, {bounds.size.w / 3, bounds.size.h / 4}, {0, bounds.size.h / 2}}
+									};
+									GPath *s_triangle_path_1 = gpath_create(&TRIANGLE_PATH_INFO_1);
+									gpath_draw_filled(ctx, s_triangle_path_1);
+									gpath_destroy(s_triangle_path_1);
+							break;
+						}
 		}
 	}
 }
 
 static void add_passenger_to_train() {
-	if (s_number_of_passengers > 0) {
+	if (s_number_of_passengers_waiting > 0) {
 		s_passenger_timer = app_timer_register(TRAIN_DELAY, add_passenger_to_train, NULL);
-		layer_mark_dirty(s_train_layer);
-		--s_number_of_passengers;
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers is %d.", s_number_of_passengers);
+		--s_number_of_passengers_waiting;
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers waiting is %d.", s_number_of_passengers_waiting);
 		s_number_of_passengers_on_train++;
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers on the train is %d.", s_number_of_passengers_on_train);
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers in total is %d.", s_number_of_passengers);
+		layer_mark_dirty(s_train_layer);
 	}
 }
 
@@ -181,25 +230,20 @@ static void foreground_update_proc(Layer *s_foreground_layer, GContext *ctx) {
 		graphics_context_set_stroke_width(ctx, 5);
 		graphics_context_set_stroke_color(ctx, GColorBlack);
 		graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 0.75), bounds.size.w / 10);
-		s_station = 1;
 
 		// Draw the passengers
 		graphics_context_set_fill_color(ctx, GColorBlack);
-		for (int i = 0; i < s_number_of_passengers; i++) {
-// 			s_shape[i] = rand() % 3;
-// 			while(s_shape[i] == s_station) {
-// 				s_shape[i] = rand() % 3;
-// 			}
+		for (int i = 0; i < s_number_of_passengers_waiting; i++) {
 			int s_shape_width = 2 * bounds.size.w / 20;
 // 			APP_LOG(APP_LOG_LEVEL_DEBUG, "The random number is %d.", s_shape[i]);
-// 			switch(s_shape[i]) {
-// 				case 0: // This is a circle
-// 					APP_LOG(APP_LOG_LEVEL_DEBUG, "A circle was drawn.");
-// 					graphics_fill_circle(ctx, GPoint(bounds.size.w / 2 + bounds.size.w / 20 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 10), bounds.size.h / 33);
-// 					break;
-// 				case 1: // This is a square
-// 					break;
-// 				case 2: ;// This is a triangle
+			switch(s_shape[i]) {
+				case 0: // This is a circle
+					graphics_fill_circle(ctx, GPoint(bounds.size.w / 2 + bounds.size.w / 20 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 11), bounds.size.h / 30);
+					break;
+				case 1: // This is a square
+					graphics_fill_rect(ctx, GRect(bounds.size.w / 2 + bounds.size.w / 15 + bounds.size.w / 20 + i *(s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 16, bounds.size.h / 15, bounds.size.h / 15), 0, GCornerNone);
+					break;
+				case 2: ;// This is a triangle
 					const GPathInfo TRIANGLE_PATH_INFO = {
 						.num_points = 3,
 						.points = (GPoint []) {{bounds.size.w / 2 + bounds.size.w / 15 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - bounds.size.w / 10 - 5},
@@ -209,9 +253,9 @@ static void foreground_update_proc(Layer *s_foreground_layer, GContext *ctx) {
 					GPath *s_triangle_path = gpath_create(&TRIANGLE_PATH_INFO);
 					gpath_draw_filled(ctx, s_triangle_path);
 					gpath_destroy(s_triangle_path);
-// 				break;
+					break;
 			}
-// 		}
+		}
 	}
 // 	#if PBL_API_EXISTS(health_service_peek_current_value)
 // 		// Draw heart rate text
@@ -234,10 +278,17 @@ static void update_ui() {
   strftime(s_time_text, sizeof(s_time_text), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 	s_minutes = tick_time->tm_min % 5;
 	if (s_minutes == 0) {
-		s_number_of_passengers = 5;
+		s_number_of_passengers_waiting = 5;
 	} else {
-		s_number_of_passengers = s_minutes;
+		s_number_of_passengers_waiting = s_minutes;
 	}
+	
+	s_number_of_passengers = s_number_of_passengers_waiting - 1;
+	
+	if (s_shape[s_minutes] == 4) {
+		s_shape[s_minutes] = rand() % 3;
+	}
+	
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "The current minutes is %d.", s_minutes);
 
 //   #if PBL_API_EXISTS(health_service_peek_current_value)
@@ -248,10 +299,10 @@ static void update_ui() {
 	// Set battery
   BatteryChargeState battery_info = battery_state_service_peek();
   snprintf(s_battery_text, sizeof(s_battery_text), "%d%%", battery_info.charge_percent);
-	
+
 	// Redraw foreground layer to show time and battery
 	layer_mark_dirty(s_foreground_layer);
-	
+
 	// Animate train coming in every 5 minutes
 	if (s_minutes == 0 && !s_animating) {
 		train_animation_in();
@@ -281,6 +332,22 @@ static void initialize_ui() {
 	s_minutes = tick_time->tm_min % 5;
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "The number is minutes is %d.", s_minutes);
 	
+	// Assign passenger shapes
+	for (int i = 0; i <= s_minutes; i++) {
+		s_shape[i] = rand() % 3;
+		while(s_shape[i] == s_station) {
+			s_shape[i] = rand() % 3;
+		}
+	}
+	
+	if (s_minutes == 0) {
+		s_number_of_passengers_waiting = 5;
+	} else {
+		s_number_of_passengers_waiting = s_minutes;
+	}
+	
+	s_number_of_passengers = s_number_of_passengers_waiting - 1;
+	
 	// Animate train coming in
 	train_animation_in();
 	s_passenger_timer = app_timer_register(TRAIN_DURATION + TRAIN_DELAY, add_passenger_to_train, NULL);
@@ -288,7 +355,7 @@ static void initialize_ui() {
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 	// Upon minute change, UI is updated
-  update_ui();
+	update_ui();
 }
 
 static void main_window_load(Window *window) {
@@ -310,6 +377,7 @@ static void main_window_unload(Window *window) {
 }
 
 static void init() {
+	APP_LOG(APP_LOG_LEVEL_INFO, "Running version 0.5.");
 	// Create the main window
 	s_main_window = window_create();
 	window_set_window_handlers(s_main_window, (WindowHandlers) {
