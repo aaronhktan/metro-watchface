@@ -5,6 +5,7 @@
 #define TRAIN_WIDTH 45
 #define TRAIN_DELAY 500
 #define TRAIN_DURATION 1500
+#define PASSENGER_TYPES 3
 
 static Window *s_main_window;
 static Layer *s_window_layer, *s_foreground_layer, *s_background_layer, *s_train_layer;
@@ -279,15 +280,20 @@ static void update_ui() {
 	s_minutes = tick_time->tm_min % 5;
 	if (s_minutes == 0) {
 		s_number_of_passengers_waiting = 5;
+		for (int i = 0; i < s_number_of_passengers_waiting; i++) {
+			s_shape[i] = rand() % PASSENGER_TYPES;
+			while(s_shape[i] == s_station) {
+				s_shape[i] = rand() % PASSENGER_TYPES;
+			}
+		}
 	} else {
 		s_number_of_passengers_waiting = s_minutes;
+		if (s_shape[s_number_of_passengers_waiting] == 4) {
+			s_shape[s_number_of_passengers_waiting] = rand() % PASSENGER_TYPES;
+		}
 	}
 	
 	s_number_of_passengers = s_number_of_passengers_waiting - 1;
-	
-	if (s_shape[s_minutes] == 4) {
-		s_shape[s_minutes] = rand() % 3;
-	}
 	
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "The current minutes is %d.", s_minutes);
 
@@ -332,18 +338,18 @@ static void initialize_ui() {
 	s_minutes = tick_time->tm_min % 5;
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "The number is minutes is %d.", s_minutes);
 	
-	// Assign passenger shapes
-	for (int i = 0; i <= s_minutes; i++) {
-		s_shape[i] = rand() % 3;
-		while(s_shape[i] == s_station) {
-			s_shape[i] = rand() % 3;
-		}
-	}
-	
 	if (s_minutes == 0) {
 		s_number_of_passengers_waiting = 5;
 	} else {
 		s_number_of_passengers_waiting = s_minutes;
+	}
+	
+	// Assign passenger shapes
+	for (int i = 0; i < s_number_of_passengers_waiting; i++) {
+		s_shape[i] = rand() % PASSENGER_TYPES;
+		while(s_shape[i] == s_station) {
+			s_shape[i] = rand() % PASSENGER_TYPES;
+		}
 	}
 	
 	s_number_of_passengers = s_number_of_passengers_waiting - 1;
