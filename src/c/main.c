@@ -9,7 +9,7 @@
 
 static Window *s_main_window;
 static Layer *s_window_layer, *s_foreground_layer, *s_background_layer, *s_train_layer;
-static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0, s_number_of_passengers;
+static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_shape_on_train[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0, s_number_of_passengers;
 static char s_time_text[6] = "00:00", s_battery_text[5] = "100%";
 // s_heart_rate_text[8] = "200 BPM";
 static PropertyAnimation *animation_in, *animation_out;
@@ -17,6 +17,7 @@ static bool s_animating, s_pick_up_passengers = false;
 static GFont s_leco_font;
 static AppTimer *s_passenger_timer;
 
+// Reset variables after train animation is done
 static void end_train_animation() {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "The train animation has stopped.");
 	s_animating = false;
@@ -25,6 +26,7 @@ static void end_train_animation() {
 	animation_destroy((Animation*)animation_out);
 }
 
+// PropertyAnimation to move the train from station to out of screen
 static void train_animation_out() {
 	s_pick_up_passengers = true;
 	layer_mark_dirty(s_foreground_layer);
@@ -33,7 +35,7 @@ static void train_animation_out() {
 	GRect to_frame = GRect(bounds.size.w + 60, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
 	animation_out = property_animation_create_layer_frame(s_train_layer, &from_frame, &to_frame);
 	animation_set_duration((Animation*)animation_out, TRAIN_DURATION);
-	if (s_number_of_passengers_waiting == 0) {
+	if (s_number_of_passengers_on_train == 0) {
 		animation_set_delay((Animation*)animation_out, 0);
 		animation_set_curve((Animation*)animation_out, AnimationCurveLinear);
 	} else {
@@ -47,6 +49,7 @@ static void train_animation_out() {
 	animation_schedule((Animation*)animation_out);
 }
 
+// PropertyAnimation for train layer to move it from offscreen to the station
 static void train_animation_in() {
 	if (!s_animating) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Train is moving in.");
@@ -70,18 +73,19 @@ static void train_animation_in() {
 	}
 }
 
+// The train layer includes the train and all the passengers on the train
 static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 	GRect bounds = layer_get_bounds(s_train_layer);
 	
-	graphics_context_set_fill_color(ctx, GColorYellow);
+	graphics_context_set_fill_color(ctx, GColorYellow); // Set train colour to yellow
 	
-	graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+	graphics_fill_rect(ctx, bounds, 0, GCornerNone); // Fill the rectangle with yellow
 	
-	if (s_pick_up_passengers) {
-		graphics_context_set_fill_color(ctx, GColorPastelYellow);
+	if (s_pick_up_passengers) { // This means that the train is at the station and the redraw should add passengers
+		graphics_context_set_fill_color(ctx, GColorRed);
 		switch(s_number_of_passengers_on_train) {
 			case 5:
-				switch(s_shape[s_number_of_passengers - 4]) {
+				switch(s_shape_on_train[4]) {
 					case 0:
 						graphics_fill_circle(ctx, GPoint(bounds.size.w * 5 / 6, bounds.size.h / 4), bounds.size.h / 4);
 						break;
@@ -99,7 +103,7 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 						break;
 				}
 			case 4:
-				switch(s_shape[s_number_of_passengers - 3]) {
+				switch(s_shape_on_train[3]) {
 					case 0:
 						graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 3 / 4), bounds.size.h / 4);
 						break;
@@ -117,7 +121,7 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 						break;
 				}
 			case 3:
-				switch(s_shape[s_number_of_passengers - 2]) {
+				switch(s_shape_on_train[2]) {
 					case 0:
 						graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 4), bounds.size.h / 4);
 						break;
@@ -135,7 +139,7 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 						break;
 				}
 			case 2:
-				switch(s_shape[s_number_of_passengers - 1]) {
+				switch(s_shape_on_train[1]) {
 					case 0:
 						graphics_fill_circle(ctx, GPoint(bounds.size.w / 6, bounds.size.h * 3 / 4), bounds.size.h / 4);
 						break;
@@ -153,7 +157,7 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 						break;
 				}
 			case 1:
-					switch(s_shape[s_number_of_passengers]) {
+					switch(s_shape_on_train[0]) {
 						case 0:
 							graphics_fill_circle(ctx, GPoint(bounds.size.w / 6, bounds.size.h / 4), bounds.size.h / 4);
 							break;
@@ -175,23 +179,28 @@ static void train_update_proc(Layer *s_train_layer, GContext *ctx) {
 }
 
 static void add_passenger_to_train() {
-	if (s_number_of_passengers_waiting > 0) {
-		s_passenger_timer = app_timer_register(TRAIN_DELAY, add_passenger_to_train, NULL);
-		--s_number_of_passengers_waiting;
+	if (s_number_of_passengers_waiting > 0) { // There are still passengers at the station
+		s_passenger_timer = app_timer_register(TRAIN_DELAY, add_passenger_to_train, NULL); // Wait for some time before taking next passenger
+		--s_number_of_passengers_waiting; // Remove one passenger from the number of passengers left at the station
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers waiting is %d.", s_number_of_passengers_waiting);
-		s_number_of_passengers_on_train++;
+		s_number_of_passengers_on_train++; // Add one passenger to the number of passengers on the train
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers on the train is %d.", s_number_of_passengers_on_train);
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers in total is %d.", s_number_of_passengers);
 		layer_mark_dirty(s_train_layer);
+		for (int i = 1; i <= s_number_of_passengers_waiting; i++) { // Move all the waiting passengers down one
+			s_shape[i - 1] = s_shape[i];
+		}
 	}
 }
 
+// Background includes the line and the sand
 static void background_update_proc(Layer *s_background_layer, GContext *ctx) {
 	// Sets bounds of window
 	GRect bounds = layer_get_bounds(s_window_layer);
 	
 	// Set colour to the closest thing to sand
 	graphics_context_set_fill_color(ctx, GColorWhite);
+	
 	// Draw background color
 	PBL_IF_RECT_ELSE(graphics_fill_rect(ctx, bounds, 0, GCornerNone), graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w));
 	
@@ -200,9 +209,8 @@ static void background_update_proc(Layer *s_background_layer, GContext *ctx) {
 	graphics_fill_rect(ctx, GRect(0, bounds.size.h * 0.75 - 10, bounds.size.w, 20), 0, GCornerNone);
 }
 
+// The foreground is the time, battery, station, and passengers
 static void foreground_update_proc(Layer *s_foreground_layer, GContext *ctx) {
-	
-// 	if (!s_animating) {
 		// Set bounds of window
 		GRect bounds = layer_get_bounds(s_window_layer);
 
@@ -244,7 +252,7 @@ static void foreground_update_proc(Layer *s_foreground_layer, GContext *ctx) {
 				case 1: // This is a square
 					graphics_fill_rect(ctx, GRect(bounds.size.w / 2 + bounds.size.w / 15 + bounds.size.w / 20 + i *(s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 16, bounds.size.h / 15, bounds.size.h / 15), 0, GCornerNone);
 					break;
-				case 2: ;// This is a triangle
+				case 2: ; // This is a triangle
 					const GPathInfo TRIANGLE_PATH_INFO = {
 						.num_points = 3,
 						.points = (GPoint []) {{bounds.size.w / 2 + bounds.size.w / 15 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - bounds.size.w / 10 - 5},
@@ -276,6 +284,7 @@ static void update_ui() {
 	time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
 
+	// Put time into string
   strftime(s_time_text, sizeof(s_time_text), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 	s_minutes = tick_time->tm_min % 5;
 	if (s_minutes == 0) {
@@ -285,10 +294,11 @@ static void update_ui() {
 			while(s_shape[i] == s_station) {
 				s_shape[i] = rand() % PASSENGER_TYPES;
 			}
+			s_shape_on_train[i] = s_shape[i];
 		}
 	} else {
 		s_number_of_passengers_waiting = s_minutes;
-		if (s_shape[s_number_of_passengers_waiting] == 4) {
+		if (s_shape[s_number_of_passengers_waiting] == 4) { // 4 means that the shape has not been assigned yet
 			s_shape[s_number_of_passengers_waiting] = rand() % PASSENGER_TYPES;
 		}
 	}
@@ -307,8 +317,12 @@ static void update_ui() {
   snprintf(s_battery_text, sizeof(s_battery_text), "%d%%", battery_info.charge_percent);
 
 	// Redraw foreground layer to show time and battery
-	layer_mark_dirty(s_foreground_layer);
-
+// 	if (s_animating) {
+		layer_mark_dirty(s_foreground_layer);
+// 	} else {
+// 		app_timer_register(2 * TRAIN_DURATION + 2 * TRAIN_DELAY, update_ui, NULL);
+// 	}
+	
 	// Animate train coming in every 5 minutes
 	if (s_minutes == 0 && !s_animating) {
 		train_animation_in();
@@ -335,8 +349,14 @@ static void initialize_ui() {
 	
 	time_t temp = time(NULL);
   struct tm *tick_time = localtime(&temp);
+	strftime(s_time_text, sizeof(s_time_text), clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 	s_minutes = tick_time->tm_min % 5;
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "The number is minutes is %d.", s_minutes);
+	
+// 	// Set battery
+//   BatteryChargeState battery_info = battery_state_service_peek();
+//   snprintf(s_battery_text, sizeof(s_battery_text), "%d%%", battery_info.charge_percent);
+	
+// 	layer_mark_dirty(s_foreground_layer);
 	
 	if (s_minutes == 0) {
 		s_number_of_passengers_waiting = 5;
@@ -347,9 +367,10 @@ static void initialize_ui() {
 	// Assign passenger shapes
 	for (int i = 0; i < s_number_of_passengers_waiting; i++) {
 		s_shape[i] = rand() % PASSENGER_TYPES;
-		while(s_shape[i] == s_station) {
+		while(s_shape[i] == s_station) { // Prevent generating passenger shape that is the same as the station
 			s_shape[i] = rand() % PASSENGER_TYPES;
 		}
+		s_shape_on_train[i] = s_shape[i];
 	}
 	
 	s_number_of_passengers = s_number_of_passengers_waiting - 1;
@@ -360,8 +381,14 @@ static void initialize_ui() {
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-	// Upon minute change, UI is updated
-	update_ui();
+	if (!s_animating) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Update was not rescheduled!");
+		// Upon minute change, UI is updated
+		update_ui();
+	} else {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Animation is happening, so the update was rescheduled.");
+		app_timer_register(4 * TRAIN_DELAY + 2 * TRAIN_DURATION, update_ui, NULL);
+	}
 }
 
 static void main_window_load(Window *window) {
