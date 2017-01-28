@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "graphics.h"
+#include "src/c/settings.h"
 
 void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco_font, char* s_time_text, char *s_battery_text, int s_shape[], int s_number_of_passengers_waiting) {
 	// Set bounds of window
@@ -27,7 +28,7 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 	// Draw the station
 	graphics_context_set_fill_color(ctx, GColorWhite);
 	graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 0.75), bounds.size.w / 10);
-	graphics_context_set_stroke_width(ctx, 5);
+	graphics_context_set_stroke_width(ctx, 7);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
 	graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 0.75), bounds.size.w / 10);
 	
@@ -71,7 +72,7 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 }
 
 void graphics_draw_background(GContext *ctx, Layer *s_window_layer) {
-		// Sets bounds of window
+	// Sets bounds of window
 	GRect bounds = layer_get_bounds(s_window_layer);
 	
 	// Set colour to the closest thing to sand
@@ -81,14 +82,14 @@ void graphics_draw_background(GContext *ctx, Layer *s_window_layer) {
 	PBL_IF_RECT_ELSE(graphics_fill_rect(ctx, bounds, 0, GCornerNone), graphics_fill_circle(ctx, grect_center_point(&bounds), bounds.size.w));
 	
 	// Draw the line
-	graphics_context_set_fill_color(ctx, GColorYellow);
+	graphics_context_set_fill_color(ctx, settings_get_line_colour());
 	graphics_fill_rect(ctx, GRect(0, bounds.size.h * 0.75 - 10, bounds.size.w, 20), 0, GCornerNone);
 }
 
 void graphics_draw_train(GContext *ctx, Layer *s_train_layer, bool s_train_at_station, int s_number_of_passengers_on_train, int s_shape_on_train[]) {
-		GRect bounds = layer_get_bounds(s_train_layer);
+	GRect bounds = layer_get_bounds(s_train_layer);
 	
-	graphics_context_set_fill_color(ctx, GColorYellow); // Set train colour to yellow
+	graphics_context_set_fill_color(ctx, settings_get_line_colour()); // Set train colour to colour set by user
 	
 	graphics_fill_rect(ctx, bounds, 0, GCornerNone); // Fill the rectangle with yellow
 	

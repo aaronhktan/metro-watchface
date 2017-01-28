@@ -6,13 +6,20 @@
     "keywords": [],
     "name": "metro-watchface",
     "pebble": {
+        "capabilities": [
+            "configurable"
+        ],
         "displayName": "Metro Watchface",
         "enableMultiJS": true,
-        "messageKeys": [],
+        "messageKeys": [
+            "lineColour",
+            "passengerColour"
+        ],
         "projectType": "native",
         "resources": {
             "media": [
                 {
+                    "characterRegex": "[0-9%]",
                     "file": "fonts/LECO1976.ttf",
                     "name": "FONT_LECO_20",
                     "targetPlatforms": null,

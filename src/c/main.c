@@ -1,5 +1,7 @@
 #include <pebble.h>
 #include "src/c/graphics.h"
+#include "src/c/comm.h"
+#include "src/c/settings.h"
 
 #define LECO_20 RESOURCE_ID_FONT_LECO_20
 #define TRAIN_HEIGHT 30
@@ -12,7 +14,7 @@
 static Window *s_main_window;
 static Layer *s_window_layer, *s_foreground_layer, *s_background_layer, *s_train_layer;
 static GRect bounds;
-static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_shape_on_train[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0, s_number_of_passengers;
+static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_shape_on_train[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0;
 static char s_time_text[6] = "00:00", s_battery_text[5] = "100%";
 // s_heart_rate_text[8] = "200 BPM";
 static PropertyAnimation *animation_in, *animation_out;
@@ -60,7 +62,7 @@ static void set_time_and_battery() {
 	// Set steps
 }
 
-// Set the numbe of passengers
+// Set the number of passengers
 static void set_number_of_passengers() {
 	// Set number of passengers based on time
 	if (s_minutes == 0) {
@@ -109,7 +111,7 @@ static void train_animation_out() {
 	}
 	animation_set_handlers((Animation*)animation_out, (AnimationHandlers) {
 		.started = NULL,
-		.stopped = (void*)end_train_animation
+		.stopped = (void*)end_train_animation // Reset everything when animation is complete
 	}, NULL);
 	animation_schedule((Animation*)animation_out);
 }
@@ -144,7 +146,6 @@ static void add_passenger_to_train() {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers waiting is %d.", s_number_of_passengers_waiting);
 		s_number_of_passengers_on_train++; // Add one passenger to the number of passengers on the train
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers on the train is %d.", s_number_of_passengers_on_train);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "The number of passengers in total is %d.", s_number_of_passengers);
 		layer_mark_dirty(s_train_layer);
 		for (int i = 1; i <= s_number_of_passengers_waiting; i++) { // Move all the waiting passengers down one
 			s_shape[i - 1] = s_shape[i];
@@ -158,13 +159,13 @@ static void update_ui() {
 	// Set time and battery
 	set_time_and_battery();
 
+	// Set number of passengers waiting only when not animating; when animating, this would redraw passengers as they were being taken onto the train
+	if (!s_animating) {
+		s_number_of_passengers_waiting++;
+	}
+	
 	// Redraw foreground layer to show time and battery
 	layer_mark_dirty(s_foreground_layer);
-	
-	// Set number of passengers waiting if not animating
-	if (!s_animating) {
-		set_number_of_passengers();
-	}
 }
 
 static void initialize_ui() {
@@ -195,6 +196,13 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 	}
 }
 
+static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+	if (!s_animating) {
+		train_animation_in();
+		s_passenger_timer = app_timer_register(TRAIN_DURATION + TRAIN_DELAY, add_passenger_to_train, NULL);
+	}
+}
+
 static void main_window_load(Window *window) {
 	// Load and update UI
 	s_window_layer = window_get_root_layer(window);
@@ -202,9 +210,12 @@ static void main_window_load(Window *window) {
 	set_number_of_passengers();
 	generate_all_shapes();
 	update_ui();
+	set_number_of_passengers();
 	// Animate train coming in
 	train_animation_in();
 	s_passenger_timer = app_timer_register(TRAIN_DURATION + TRAIN_DELAY, add_passenger_to_train, NULL);
+	// Subscribe to accelerometer shake to animate train coming in
+	accel_tap_service_subscribe(accel_tap_handler);
 }
 
 static void main_window_unload(Window *window) {
@@ -219,6 +230,10 @@ static void main_window_unload(Window *window) {
 
 static void init() {
 	APP_LOG(APP_LOG_LEVEL_INFO, "Running version 0.5.");
+	
+	comm_init();
+	settings_init();
+	
 	// Create the main window
 	s_main_window = window_create();
 	window_set_window_handlers(s_main_window, (WindowHandlers) {
