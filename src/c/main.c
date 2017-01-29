@@ -8,13 +8,13 @@
 #define TRAIN_WIDTH 45
 #define TRAIN_DELAY 500
 #define TRAIN_DURATION 1500
-#define PASSENGER_TYPES 3
+#define PASSENGER_TYPES 5
 #define MAX_NUMBER_OF_PASSENGERS 5
 
 static Window *s_main_window;
 static Layer *s_window_layer, *s_foreground_layer, *s_background_layer, *s_train_layer;
 static GRect bounds;
-static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_shape_on_train[6] = {4, 4, 4, 4, 4, 4}, s_station = 4, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0;
+static int s_minutes, s_shape[6] = {4, 4, 4, 4, 4, 4}, s_shape_on_train[6] = {4, 4, 4, 4, 4, 4}, s_station = 15, s_number_of_passengers_waiting, s_number_of_passengers_on_train = 0;
 static char s_time_text[6] = "00:00", s_battery_text[5] = "100%";
 // s_heart_rate_text[8] = "200 BPM";
 static PropertyAnimation *animation_in, *animation_out;
@@ -79,6 +79,7 @@ static void generate_all_shapes() {
 		while(s_shape[i] == s_station) { // Prevent generating passenger shape that is the same as the station
 			s_shape[i] = rand() % PASSENGER_TYPES;
 		}
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "The random number generated is %d.", s_shape[i]);
 		s_shape_on_train[i] = s_shape[i];
 	}
 }
@@ -98,8 +99,8 @@ static void end_train_animation() {
 static void train_animation_out() {
 	layer_mark_dirty(s_foreground_layer);
 	s_train_at_station = true;
-	GRect from_frame = GRect(bounds.size.w / 2 - 0.5 * TRAIN_WIDTH, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
-	GRect to_frame = GRect(bounds.size.w + 60, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
+	GRect from_frame = GRect(bounds.size.w / 2 - 0.5 * TRAIN_WIDTH, bounds.size.h * 2 / 3 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
+	GRect to_frame = GRect(bounds.size.w + 60, bounds.size.h * 2 / 3 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
 	animation_out = property_animation_create_layer_frame(s_train_layer, &from_frame, &to_frame);
 	animation_set_duration((Animation*)animation_out, TRAIN_DURATION);
 	if (s_number_of_passengers_on_train == 0) {
@@ -120,8 +121,8 @@ static void train_animation_out() {
 static void train_animation_in() {
 	if (!s_animating) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Train is moving in.");
-		GRect from_frame = GRect(-60, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
-		GRect to_frame = GRect(bounds.size.w / 2 - 0.5 * TRAIN_WIDTH, bounds.size.h * 0.75 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
+		GRect from_frame = GRect(-60, bounds.size.h * 2 / 3 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
+		GRect to_frame = GRect(bounds.size.w / 2 - 0.5 * TRAIN_WIDTH, bounds.size.h * 2 / 3 - 0.5 * TRAIN_HEIGHT, TRAIN_WIDTH, TRAIN_HEIGHT);
 		animation_in = property_animation_create_layer_frame(s_train_layer, &from_frame, &to_frame);
 		animation_set_duration((Animation*)animation_in, TRAIN_DURATION);
 		animation_set_delay((Animation*)animation_in, TRAIN_DELAY);
@@ -219,7 +220,6 @@ static void main_window_load(Window *window) {
 }
 
 static void main_window_unload(Window *window) {
-	// Destory all layers, stop animations, and unload custom font
 	layer_destroy(s_window_layer);
 	layer_destroy(s_foreground_layer);
 	layer_destroy(s_background_layer);
@@ -241,7 +241,7 @@ static void init() {
 		.unload = main_window_unload
 	});
 	
-	// Initialize randomizer
+	// Initialize randomizer for generating random passenger shapes
 	time_t t;
 	srand((unsigned) time(&t));
 	

@@ -27,34 +27,87 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 
 	// Draw the station
 	graphics_context_set_fill_color(ctx, GColorWhite);
-	graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 0.75), bounds.size.w / 10);
+	graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 2 / 3), bounds.size.w / 10);
 	graphics_context_set_stroke_width(ctx, 7);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
-	graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 0.75), bounds.size.w / 10);
+	graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 2 / 3), bounds.size.w / 10);
 	
 	// Draw the passengers
 	graphics_context_set_fill_color(ctx, GColorBlack);
 	for (int i = 0; i < s_number_of_passengers_waiting; i++) {
-		int s_shape_width = 2 * bounds.size.w / 20;
+		int s_shape_width = bounds.size.w / 11; // This is the width that every shape takes up
+		#if PBL_DISPLAY_WIDTH == 144
+			int s_distance_between = 2;
+		#elif PBL_DISPLAY_WIDTH == 180
+			int s_distance_between = 2;
+		#elif PBL_PLATFORM_EMERY
+			int s_distance_between = 3;
+		#else
+			int s_distance_between = 2;
+		#endif
+		int s_vertical_offset = bounds.size.w / 10;
+		int s_horizontal_center = bounds.size.w / 2;
+		int s_vertical_center = bounds.size.h * 2 / 3;
+		int s_station_radius = bounds.size.w / 7;
 		// 			APP_LOG(APP_LOG_LEVEL_DEBUG, "The random number is %d.", s_shape[i]);
 		switch(s_shape[i]) {
-			case 0: // This is a circle
-			graphics_fill_circle(ctx, GPoint(bounds.size.w / 2 + bounds.size.w / 20 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 11), bounds.size.h / 30);
-			break;
-			case 1: // This is a square
-			graphics_fill_rect(ctx, GRect(bounds.size.w / 2 + bounds.size.w / 15 + bounds.size.w / 20 + i *(s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - 16, bounds.size.h / 15, bounds.size.h / 15), 0, GCornerNone);
-			break;
+			case 0: // This is a circle (x is center, add radius of station, add half of circle, then add space between shapes) (y is center of line - vertical offset + half of radius)
+				graphics_fill_circle(ctx, GPoint(s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width / 2), s_shape_width / 2);
+				break;
+			case 1: // This is a square (GRect is x, y, width, height) (x coordinate is center of screen + radius of station + space between)
+				graphics_fill_rect(ctx, GRect(s_horizontal_center + s_station_radius + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset, s_shape_width, s_shape_width), 0, GCornerNone);
+				break;
 			case 2: ; // This is a triangle
-			const GPathInfo TRIANGLE_PATH_INFO = {
-				.num_points = 3,
-				.points = (GPoint []) {{bounds.size.w / 2 + bounds.size.w / 15 + 2 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - bounds.size.w / 10 - 5},
-				{bounds.size.w / 2 + bounds.size.w / 15 + 3 * bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - bounds.size.w / 10 + bounds.size.w / 20},
-				{bounds.size.w / 2 + bounds.size.w / 15 + bounds.size.w / 20 + i * (s_shape_width + bounds.size.w / 40), bounds.size.h * 0.75 - bounds.size.w / 10 + bounds.size.w / 20}}
-			};
-			GPath *s_triangle_path = gpath_create(&TRIANGLE_PATH_INFO);
-			gpath_draw_filled(ctx, s_triangle_path);
-			gpath_destroy(s_triangle_path);
-			break;
+				const GPathInfo TRIANGLE_PATH_INFO = { // (middle top, left bottom, right bottom)
+					.num_points = 3,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset - 1},
+					{s_horizontal_center + s_station_radius + i * (s_shape_width + s_distance_between) - s_distance_between / 2, s_vertical_center - s_vertical_offset - 1 + s_shape_width},
+					{s_horizontal_center + s_station_radius + i * (s_shape_width + s_distance_between) + s_shape_width + s_distance_between / 2, s_vertical_center - s_vertical_offset - 1 + s_shape_width}}
+				};
+				GPath *s_triangle_path = gpath_create(&TRIANGLE_PATH_INFO);
+				gpath_draw_filled(ctx, s_triangle_path);
+				gpath_destroy(s_triangle_path);
+				break;
+			case 3: ; // This is a star
+				const GPathInfo STAR_PATH_INFO = { // top, then clockwise
+					.num_points = 10,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset - 2},
+																{s_horizontal_center + s_station_radius + s_shape_width * 6 / 8 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 2 / 5 - 2},
+																{s_horizontal_center + s_station_radius + s_shape_width + 1 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 2 / 5 - 2},
+																{s_horizontal_center + s_station_radius + 1 + s_shape_width * 6 / 8 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 6 / 10},
+																{s_horizontal_center + s_station_radius + 1 + s_shape_width * 15 / 16 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width + 1},
+																{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 4 / 5},
+																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 16 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width + 1},
+																{s_horizontal_center + s_station_radius - 1 + s_shape_width * 2 / 8 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 6 / 10},
+																{s_horizontal_center + s_station_radius - 1 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 2 / 5 - 1},
+																{s_horizontal_center + s_station_radius - 1 + s_shape_width * 2 / 8 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 2 / 5 - 1}}
+				};
+				GPath *s_star_path = gpath_create(&STAR_PATH_INFO);
+				gpath_draw_filled(ctx, s_star_path);
+				gpath_destroy(s_star_path);
+				break;
+			case 4: ; // This is a pentagon
+				const GPathInfo PENTAGON_PATH_INFO = {
+					.num_points = 5,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset - 2},
+																{s_horizontal_center + s_station_radius + s_shape_width + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20},
+																{s_horizontal_center + s_station_radius + s_shape_width * 9 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width - 1},
+																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width - 1},
+																{s_horizontal_center + s_station_radius - 1 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20}}
+				};
+				GPath *s_pentagon_path = gpath_create(&PENTAGON_PATH_INFO);
+				gpath_draw_filled(ctx, s_pentagon_path);
+				gpath_destroy(s_pentagon_path);
+				break;
+			case 5: ; // This is a diamond
+				break;
+			case 6: ; // This is a cross
+				break;
+			case 7: ; // This is a teardrop
+				break;
+			case 8: ; // This is a gem
+				break;
+			case 9: ; // This is an oval
 		}
 	}
 // 	#if PBL_API_EXISTS(health_service_peek_current_value)
@@ -83,7 +136,7 @@ void graphics_draw_background(GContext *ctx, Layer *s_window_layer) {
 	
 	// Draw the line
 	graphics_context_set_fill_color(ctx, settings_get_line_colour());
-	graphics_fill_rect(ctx, GRect(0, bounds.size.h * 0.75 - 10, bounds.size.w, 20), 0, GCornerNone);
+	graphics_fill_rect(ctx, GRect(0, bounds.size.h * 2 / 3 - 10, bounds.size.w, 20), 0, GCornerNone);
 }
 
 void graphics_draw_train(GContext *ctx, Layer *s_train_layer, bool s_train_at_station, int s_number_of_passengers_on_train, int s_shape_on_train[]) {
