@@ -18,7 +18,7 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 										 GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
 	// Draw battery text
-	GSize battery_text_bounds = graphics_text_layout_get_content_size("100%", s_leco_font,
+	GSize battery_text_bounds = graphics_text_layout_get_content_size("---%", s_leco_font,
 																																		GRect(0, 0, bounds.size.w, bounds.size.h),
 																																		GTextOverflowModeWordWrap, GTextAlignmentCenter);
 	graphics_draw_text(ctx, s_battery_text, s_leco_font, 
@@ -28,7 +28,8 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 	// Draw the station
 	graphics_context_set_fill_color(ctx, GColorWhite);
 	graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 2 / 3), bounds.size.w / 10);
-	graphics_context_set_stroke_width(ctx, 7);
+	int s_stroke_width = 7;
+	graphics_context_set_stroke_width(ctx, s_stroke_width);
 	graphics_context_set_stroke_color(ctx, GColorBlack);
 	graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h * 2 / 3), bounds.size.w / 10);
 	
@@ -90,22 +91,61 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 				const GPathInfo PENTAGON_PATH_INFO = {
 					.num_points = 5,
 					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset - 2},
-																{s_horizontal_center + s_station_radius + s_shape_width + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20},
+																{s_horizontal_center + s_station_radius + s_shape_width + s_distance_between - 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20},
 																{s_horizontal_center + s_station_radius + s_shape_width * 9 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width - 1},
 																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width - 1},
-																{s_horizontal_center + s_station_radius - 1 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20}}
+																{s_horizontal_center + s_station_radius - s_distance_between + 1 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 7 / 20}}
 				};
 				GPath *s_pentagon_path = gpath_create(&PENTAGON_PATH_INFO);
 				gpath_draw_filled(ctx, s_pentagon_path);
 				gpath_destroy(s_pentagon_path);
 				break;
 			case 5: ; // This is a diamond
+				const GPathInfo DIAMOND_PATH_INFO = {
+					.num_points = 4,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset - 1},
+																{s_horizontal_center + s_station_radius + s_shape_width + s_distance_between * 2 / 3 + i * (s_shape_width + s_distance_between) - 1, s_vertical_center - s_vertical_offset + 0.5 * s_shape_width},
+																{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width + 1},
+																{s_horizontal_center + s_station_radius - s_distance_between / 3 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + 0.5 * s_shape_width}}
+				};
+				GPath *s_diamond_path = gpath_create(&DIAMOND_PATH_INFO);
+				gpath_draw_filled(ctx, s_diamond_path);
+				gpath_destroy(s_diamond_path);
 				break;
 			case 6: ; // This is a cross
+				const GPathInfo CROSS_PATH_INFO = {
+					.num_points = 12,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width * 1 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset},
+																{s_horizontal_center + s_station_radius + s_shape_width * 5 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset},
+																{s_horizontal_center + s_station_radius + s_shape_width * 5 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 1 / 6},
+																{s_horizontal_center + s_station_radius + s_shape_width + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 1 / 6},
+																{s_horizontal_center + s_station_radius + s_shape_width + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 5 / 6},
+																{s_horizontal_center + s_station_radius + s_shape_width * 5 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 5 / 6},
+																{s_horizontal_center + s_station_radius + s_shape_width * 5 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width},
+																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width},
+																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center + 1 - s_vertical_offset + s_shape_width * 5 / 6},
+																{s_horizontal_center + s_station_radius - 1 + i * (s_shape_width + s_distance_between), s_vertical_center + 1 - s_vertical_offset + s_shape_width * 5 / 6},
+																{s_horizontal_center + s_station_radius - 1 + i * (s_shape_width + s_distance_between), s_vertical_center + 1 - s_vertical_offset + s_shape_width * 1 / 6},
+																{s_horizontal_center + s_station_radius + s_shape_width * 1 / 6 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 1 / 6}}
+				};
+				GPath *s_cross_path = gpath_create(&CROSS_PATH_INFO);
+				gpath_draw_filled(ctx, s_cross_path);
+				gpath_destroy(s_cross_path);
 				break;
 			case 7: ; // This is a teardrop
 				break;
 			case 8: ; // This is a gem
+				const GPathInfo GEM_PATH_INFO = {
+					.num_points = 5,
+					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width * 8 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset},
+																{s_horizontal_center + s_station_radius + s_shape_width + s_distance_between + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 3 / 10},
+																{s_horizontal_center + s_station_radius + s_shape_width / 2 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width},
+																{s_horizontal_center + s_station_radius - s_distance_between + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset + s_shape_width * 3 / 10},
+																{s_horizontal_center + s_station_radius + s_shape_width * 2 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset}}
+				};
+				GPath *s_gem_path = gpath_create(&GEM_PATH_INFO);
+				gpath_draw_filled(ctx, s_gem_path);
+				gpath_destroy(s_gem_path);
 				break;
 			case 9: ; // This is an oval
 		}
