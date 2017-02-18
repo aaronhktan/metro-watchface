@@ -132,9 +132,7 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 				gpath_draw_filled(ctx, s_cross_path);
 				gpath_destroy(s_cross_path);
 				break;
-			case 7: ; // This is a teardrop
-				break;
-			case 8: ; // This is a gem
+			case 7: ; // This is a gem
 				const GPathInfo GEM_PATH_INFO = {
 					.num_points = 5,
 					.points = (GPoint []) {{s_horizontal_center + s_station_radius + s_shape_width * 8 / 10 + i * (s_shape_width + s_distance_between), s_vertical_center - s_vertical_offset},
@@ -147,7 +145,6 @@ void graphics_draw_foreground(GContext *ctx, Layer *s_window_layer, GFont s_leco
 				gpath_draw_filled(ctx, s_gem_path);
 				gpath_destroy(s_gem_path);
 				break;
-			case 9: ; // This is an oval
 		}
 	}
 // 	#if PBL_API_EXISTS(health_service_peek_current_value)

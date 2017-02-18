@@ -8,7 +8,7 @@
 #define TRAIN_WIDTH 45
 #define TRAIN_DELAY 500
 #define TRAIN_DURATION 1500
-#define PASSENGER_TYPES 9
+#define PASSENGER_TYPES 8
 #define MAX_NUMBER_OF_PASSENGERS 5
 
 static Window *s_main_window;
